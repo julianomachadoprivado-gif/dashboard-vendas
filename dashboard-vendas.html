@@ -2283,7 +2283,22 @@
           <span id="view-completeness"></span>
         </div>
       </div>
-      <button class="modal-close" onclick="closeViewModal()">✕</button>
+      <div style="display:flex;align-items:center;gap:8px;position:relative">
+        <div style="position:relative">
+          <button id="view-tiny-btn" onclick="toggleTinyDropdown()" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(234,179,8,0.4);background:rgba(234,179,8,0.12);color:#eab308;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center">T</button>
+          <div id="tiny-dropdown" style="display:none;position:absolute;right:0;top:42px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:220px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
+            <button onclick="setTinyFromView('passar')" style="width:100%;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left" onmouseover="this.style.background='rgba(234,179,8,0.08)'" onmouseout="this.style.background='transparent'">
+              <span style="width:22px;height:22px;border-radius:6px;background:rgba(234,179,8,0.15);color:#eab308;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">T</span>
+              Tem que passar para a Tiny
+            </button>
+            <button onclick="setTinyFromView('ok')" style="width:100%;padding:10px 12px;border-radius:8px;border:none;background:transparent;color:var(--text);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left" onmouseover="this.style.background='rgba(16,185,129,0.08)'" onmouseout="this.style.background='transparent'">
+              <span style="width:22px;height:22px;border-radius:6px;background:rgba(16,185,129,0.15);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">T</span>
+              Pedido passado para a Tiny
+            </button>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeViewModal()">✕</button>
+      </div>
     </div>
 
     <!-- TAB BAR -->
@@ -3363,6 +3378,7 @@ function openViewModal(id) {
   document.getElementById('vstatus-pedido').textContent   = (sale.pedido && sale.pedido.trim()) ? '✅' : '⚠️';
   document.getElementById('vstatus-pagamento').textContent = sale.payment ? '✅' : '⚠️';
   document.getElementById('vstatus-instagram').textContent = sale.instagram ? '✅' : '⚠️';
+  updateViewTinyBtn(sale.tiny);
 
   // ── ABA 1: DADOS ──
   const dadosEl = document.getElementById('view-dados');
@@ -3505,11 +3521,49 @@ function openViewModal(id) {
 
 function closeViewModal() {
   document.getElementById('view-overlay').classList.remove('open');
+  document.getElementById('tiny-dropdown').style.display = 'none';
   viewingId = null;
+}
+
+function toggleTinyDropdown() {
+  const dd = document.getElementById('tiny-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateViewTinyBtn(tiny) {
+  const btn = document.getElementById('view-tiny-btn');
+  if (!btn) return;
+  if (tiny === 'ok') {
+    btn.style.background = 'rgba(16,185,129,0.15)';
+    btn.style.borderColor = 'rgba(16,185,129,0.5)';
+    btn.style.color = '#10b981';
+  } else {
+    btn.style.background = 'rgba(234,179,8,0.12)';
+    btn.style.borderColor = 'rgba(234,179,8,0.4)';
+    btn.style.color = '#eab308';
+  }
+}
+
+async function setTinyFromView(val) {
+  document.getElementById('tiny-dropdown').style.display = 'none';
+  if (!viewingId) return;
+  const sale = sales.find(s => s.id === viewingId);
+  if (!sale) return;
+  sale.tiny = val;
+  updateViewTinyBtn(val);
+  renderCards();
+  await saveData(sale);
+  showToast('✓', val === 'ok' ? 'Pedido marcado como passado para a Tiny!' : 'Pedido marcado para passar para a Tiny!');
 }
 
 function handleViewOverlayClick(e) {
   if (e.target === document.getElementById('view-overlay')) closeViewModal();
+  else {
+    const dd = document.getElementById('tiny-dropdown');
+    if (dd && !dd.contains(e.target) && e.target.id !== 'view-tiny-btn') {
+      dd.style.display = 'none';
+    }
+  }
 }
 
 function editFromView() {
