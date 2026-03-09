@@ -3568,13 +3568,15 @@ function buildKanbanCard(sale) {
   card.innerHTML = `
     <div class="kboard-top">
       <span class="kboard-num">${last4 ? `-${last4}` : `#${String(sale.num||'').padStart(3,'0')}`}</span>
-      <div style="display:flex;align-items:center;gap:4px">
-        ${concluido ? `<span style="font-size:9px;font-weight:700;color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace">✓ CONCLUÍDO</span>` : ''}
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end">
         ${sale.situacao === 'finalizado'
           ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;border-radius:5px;padding:1px 6px">PAGO</span>`
           : `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;border-radius:5px;padding:1px 6px">NÃO PAGO</span>`
         }
-        ${sale.tiny ? `<span class="tiny-badge ${sale.tiny === 'ok' ? 'ok' : 'passar'}" style="position:static;margin:0">T</span>` : ''}
+        ${sale.tiny === 'ok'
+          ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.5px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#10b981;border-radius:5px;padding:1px 6px;white-space:nowrap">PEDIDO NA TINY</span>`
+          : `<span style="font-size:9px;font-weight:800;letter-spacing:0.5px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.18);border:1px solid rgba(234,179,8,0.4);color:#eab308;border-radius:5px;padding:1px 6px;white-space:nowrap">PASSAR TINY</span>`
+        }
       </div>
     </div>
     <div class="kboard-name" style="font-size:${nameFontSize}">${shortName}${last4 ? ` <span class="kboard-last4">-${last4}</span>` : ''}</div>
@@ -3662,11 +3664,14 @@ function buildSaleCard(sale) {
         ${sale.situacao === 'aberto' && criado ? `<span class="card-timer ${atrasado ? 'card-timer-late' : ''} ${urgClass}" id="${tempoId}">⏱ ${timerTxt}</span>` : ''}
       </div>
     </div>
-    ${sale.tiny ? `<div class="tiny-badge ${sale.tiny === 'ok' ? 'ok' : 'passar'}" title="${sale.tiny === 'ok' ? 'Já está na Tiny' : 'Passar para a Tiny'}">T</div>` : ''}
-    <div style="position:absolute;top:12px;right:${sale.tiny ? '46px' : '12px'};pointer-events:none">
+    <div style="position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px">
       ${sale.situacao === 'finalizado'
         ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;border-radius:5px;padding:2px 7px">PAGO</span>`
         : `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;border-radius:5px;padding:2px 7px">NÃO PAGO</span>`
+      }
+      ${sale.tiny === 'ok'
+        ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.5px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.18);border:1px solid rgba(16,185,129,0.4);color:#10b981;border-radius:5px;padding:2px 7px;white-space:nowrap">PEDIDO NA TINY</span>`
+        : `<span style="font-size:9px;font-weight:800;letter-spacing:0.5px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.18);border:1px solid rgba(234,179,8,0.4);color:#eab308;border-radius:5px;padding:2px 7px;white-space:nowrap">PASSAR TINY</span>`
       }
     </div>
     <div class="card-client-name">${titleLine}</div>
