@@ -2737,7 +2737,7 @@
         <div class="modal-num" id="modal-num">PEDIDO #001</div>
         <div class="modal-title" id="modal-title">NOVO PEDIDO</div>
       </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="showExitConfirm()">✕</button>
     </div>
 
     <div class="step-indicator">
@@ -2971,6 +2971,7 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;position:relative">
+        <div id="view-pago-badge" style="padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:1px;font-family:'DM Mono',monospace;cursor:default"></div>
         <div style="position:relative">
           <button id="view-tiny-btn" onclick="toggleTinyDropdown()" style="width:34px;height:34px;border-radius:8px;border:1px solid rgba(234,179,8,0.4);background:rgba(234,179,8,0.12);color:#eab308;font-weight:800;font-size:14px;cursor:pointer;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center">T</button>
           <div id="tiny-dropdown" style="display:none;position:absolute;right:0;top:42px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:220px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.4)">
@@ -3027,7 +3028,12 @@
 
       <!-- ABA 2: PEDIDO -->
       <div class="view-tab-content" id="vcontent-pedido">
-        <div class="canal-tags" id="view-canal-tags"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="canal-tags" id="view-canal-tags" style="margin-bottom:0"></div>
+          <button id="btn-copiar-pedido" onclick="copiarPedido()" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 12px;color:var(--text-muted);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;flex-shrink:0">
+            <span style="font-size:13px">📋</span> Copiar pedido
+          </button>
+        </div>
         <div id="view-pedido"></div>
         <div id="view-obs-block" style="display:none;margin-top:12px">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-bottom:6px">Observações</div>
@@ -3564,6 +3570,10 @@ function buildKanbanCard(sale) {
       <span class="kboard-num">${last4 ? `-${last4}` : `#${String(sale.num||'').padStart(3,'0')}`}</span>
       <div style="display:flex;align-items:center;gap:4px">
         ${concluido ? `<span style="font-size:9px;font-weight:700;color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:4px;padding:1px 5px;font-family:'DM Mono',monospace">✓ CONCLUÍDO</span>` : ''}
+        ${sale.situacao === 'finalizado'
+          ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;border-radius:5px;padding:1px 6px">PAGO</span>`
+          : `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;border-radius:5px;padding:1px 6px">NÃO PAGO</span>`
+        }
         ${sale.tiny ? `<span class="tiny-badge ${sale.tiny === 'ok' ? 'ok' : 'passar'}" style="position:static;margin:0">T</span>` : ''}
       </div>
     </div>
@@ -3653,6 +3663,12 @@ function buildSaleCard(sale) {
       </div>
     </div>
     ${sale.tiny ? `<div class="tiny-badge ${sale.tiny === 'ok' ? 'ok' : 'passar'}" title="${sale.tiny === 'ok' ? 'Já está na Tiny' : 'Passar para a Tiny'}">T</div>` : ''}
+    <div style="position:absolute;top:12px;right:${sale.tiny ? '46px' : '12px'};pointer-events:none">
+      ${sale.situacao === 'finalizado'
+        ? `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;border-radius:5px;padding:2px 7px">PAGO</span>`
+        : `<span style="font-size:9px;font-weight:800;letter-spacing:0.8px;font-family:'DM Mono',monospace;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.35);color:#eab308;border-radius:5px;padding:2px 7px">NÃO PAGO</span>`
+      }
+    </div>
     <div class="card-client-name">${titleLine}</div>
     <div class="card-info-row">${canalHTML}</div>
     ${sale.valor ? `<div class="card-valor"><span class="card-label">Valor:</span> R$ ${sale.valor}</div>` : ''}
@@ -3716,10 +3732,10 @@ function renderKanban() {
   console.log('===================');
 
   const cols = [
-    { id: 'aberto',     icon: '⏳', label: 'Em Aberto',  cls: 'col-aberto',     filter: s => s.situacao === 'aberto' && (!s.canais || !s.canais.length) },
-    { id: 'sm',         icon: '📱', label: 'SM',          cls: 'col-sm',         filter: s => s.canais && s.canais.includes('sm') },
-    { id: 'presencial', icon: '🏪', label: 'Presencial',  cls: 'col-presencial', filter: s => s.canais && s.canais.includes('presencial') },
-    { id: 'fora',       icon: '🚗', label: 'Fora',        cls: 'col-fora',       filter: s => s.canais && s.canais.includes('fora') },
+    { id: 'aberto',     icon: '⏳', label: 'Em Aberto',  cls: 'col-aberto',     filter: s => s.situacao === 'aberto' },
+    { id: 'sm',         icon: '📱', label: 'SM',          cls: 'col-sm',         filter: s => s.situacao !== 'aberto' && s.canais && s.canais.includes('sm') },
+    { id: 'presencial', icon: '🏪', label: 'Presencial',  cls: 'col-presencial', filter: s => s.situacao !== 'aberto' && s.canais && s.canais.includes('presencial') },
+    { id: 'fora',       icon: '🚗', label: 'Fora',        cls: 'col-fora',       filter: s => s.situacao !== 'aberto' && s.canais && s.canais.includes('fora') },
   ];
 
   board.innerHTML = '';
@@ -3947,10 +3963,10 @@ function updateStats() {
 
 // ─── TOTALS ───────────────────────────────────────────────────────────
 function calcTotals(list) {
-  const finalizados = list.filter(s => s.situacao !== 'aberto' && s.payment);
+  const finalizados = list.filter(s => getCompleteness(s) === 3 && s.situacao !== 'aberto');
   const somaValor = finalizados.reduce((acc, s) => {
     if (!s.valor) return acc;
-    const n = parseFloat(s.valor.replace(',', '.'));
+    const n = parseFloat(String(s.valor).replace(',', '.'));
     return acc + (isNaN(n) ? 0 : n);
   }, 0);
   return {
@@ -4106,7 +4122,20 @@ function closeModal() {
 }
 
 function handleOverlayClick(e) {
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
+  if (e.target === document.getElementById('modal-overlay')) showExitConfirm();
+}
+
+function showExitConfirm() {
+  document.getElementById('exit-confirm-overlay').style.display = 'flex';
+}
+
+function hideExitConfirm() {
+  document.getElementById('exit-confirm-overlay').style.display = 'none';
+}
+
+function confirmExitModal() {
+  hideExitConfirm();
+  closeModal();
 }
 
 function updateModalStep() {
@@ -4410,6 +4439,7 @@ async function saveCurrentCard() {
   closeModal();
   renderCards();
   showToast('✓', editingId ? 'Pedido atualizado!' : 'Pedido adicionado com sucesso!');
+  if (viewingId && viewingId === sale.id) updateViewPagoBadge(sale);
   await saveData(sale);
 }
 
@@ -4569,6 +4599,7 @@ function openViewModal(id) {
   document.getElementById('vstatus-pagamento').textContent = sale.payment ? '✅' : '⚠️';
   document.getElementById('vstatus-instagram').textContent = sale.instagram ? '✅' : '⚠️';
   updateViewTinyBtn(sale.tiny);
+  updateViewPagoBadge(sale);
 
   // ── ABA 1: DADOS ──
   const dadosEl = document.getElementById('view-dados');
@@ -4821,14 +4852,36 @@ async function concluirRapido(id, btnEl) {
   sale.situacao = 'finalizado';
 
   try {
-    if (typeof supabase !== 'undefined') {
-      await supabase.from('sales').update({ situacao: 'finalizado' }).eq('id', id);
-    }
-    if (typeof saveToIndexedDB === 'function') saveToIndexedDB();
-  } catch(e) {}
+    await sbFetch(`pedidos?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ situacao: 'finalizado' }),
+    });
+  } catch(e) { console.error('concluirRapido error:', e); }
 
   showToast('✅', 'Pedido concluído!');
+  updateViewPagoBadge(sale);
   renderCards();
+}
+
+function copiarPedido() {
+  const sale = sales.find(s => s.id === viewingId);
+  if (!sale || !sale.pedido) return;
+  const texto = sale.pedido.trim();
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.getElementById('btn-copiar-pedido');
+    if (!btn) return;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<span style="font-size:13px">✅</span> Copiado!';
+    btn.style.color = 'var(--success)';
+    btn.style.borderColor = 'rgba(16,185,129,0.4)';
+    btn.style.background = 'rgba(16,185,129,0.07)';
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.style.color = 'var(--text-muted)';
+      btn.style.borderColor = 'rgba(255,255,255,0.1)';
+      btn.style.background = 'rgba(255,255,255,0.05)';
+    }, 2000);
+  });
 }
 
 function copiarDados() {
@@ -4874,6 +4927,18 @@ function updateViewTinyBtn(tiny) {
     btn.style.background = 'rgba(234,179,8,0.12)';
     btn.style.borderColor = 'rgba(234,179,8,0.4)';
     btn.style.color = '#eab308';
+  }
+}
+
+function updateViewPagoBadge(sale) {
+  const badge = document.getElementById('view-pago-badge');
+  if (!badge) return;
+  if (sale.situacao === 'finalizado') {
+    badge.textContent = 'PAGO';
+    badge.style.cssText = 'padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:1px;font-family:\'DM Mono\',monospace;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#10b981;';
+  } else {
+    badge.textContent = 'NÃO PAGO';
+    badge.style.cssText = 'padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:1px;font-family:\'DM Mono\',monospace;background:rgba(234,179,8,0.12);border:1px solid rgba(234,179,8,0.4);color:#eab308;';
   }
 }
 
@@ -5382,7 +5447,13 @@ loadData().then(() => startRealtime());
       <button onclick="navRelDia(1)" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--text);padding:6px 14px;cursor:pointer;font-size:16px">›</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-bottom:4px">
-      ${['D','S','T','Q','Q','S','S'].map(d=>`<div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">${d}</div>`).join('')}
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">D</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">S</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">T</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">Q</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">Q</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">S</div>
+      <div style="font-size:10px;color:var(--text-muted);font-weight:700;padding:4px">S</div>
     </div>
     <div id="reldia-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center"></div>
     <div style="margin-top:14px;font-size:11px;color:var(--text-muted);text-align:center">Clique em um dia para gerar o relatório</div>
@@ -5499,5 +5570,22 @@ function renderCalMes() {
   });
 }
 </script>
+<!-- Modal Confirmação de Saída do Editor -->
+<div id="exit-confirm-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#141820;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:32px 28px;width:320px;box-shadow:0 24px 64px rgba(0,0,0,0.7);text-align:center">
+    <div style="font-size:36px;margin-bottom:14px">⚠️</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:var(--text);margin-bottom:8px">SAIR SEM SALVAR?</div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:28px">As alterações que você fez ainda não foram salvas e serão perdidas.</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="hideExitConfirm()" style="padding:13px;border-radius:12px;border:1.5px solid rgba(255,107,0,0.5);background:rgba(255,107,0,0.12);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(255,107,0,0.2)'" onmouseout="this.style.background='rgba(255,107,0,0.12)'">
+        ✏️ Continuar editando
+      </button>
+      <button onclick="confirmExitModal()" style="padding:13px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='var(--text)'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='var(--text-muted)'">
+        ← Voltar para a tela inicial
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
